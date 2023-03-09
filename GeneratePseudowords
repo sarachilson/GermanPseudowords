@@ -1,0 +1,122 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar  1 21:35:23 2023
+
+@author: Sara
+"""
+
+import pandas as pd
+import numpy as np
+import random 
+
+languages = ['albanian', 'german', 'hebrew', 'arabic', 'serbian', 'english', 'polish', 'czech', 'norwegian', 'swedish', 'danish', 'dutch', 'spanish', 'italian', 'french']
+
+language = 'german'
+
+for u in languages:   
+    language = u 
+    #words filtered by wiktionary 
+    path_filtered = "C:\\Users\\Sara\\Desktop\\PhD\\LanguageData\\my_final\\"+language+".txt"
+    df = pd.read_csv(path_filtered, sep = ',')
+    
+    #create pandas dataframe for filtered words
+    df = pd.read_csv(path_filtered, sep = ',')
+    #get rid of redundant line numbers
+    df = df.drop(df.columns[0], axis=1)
+    
+    
+    df['log'] = np.log(df['per_mil'])
+    print(df.head(12500))
+    
+    
+    band_one = df[df['log'].between(0,0.5)]
+    band_two = df[df['log'].between(0.5,1)]
+    band_three = df[df['log'].between(1,1.5)]
+    band_four = df[df['log'].between(1.5,2)]
+    
+    #get all words as list
+    word_list_one = band_one["word"].values.tolist()
+    word_list_two = band_two["word"].values.tolist()
+    word_list_three = band_three["word"].values.tolist()
+    word_list_four = band_four["word"].values.tolist()
+    
+    #get n number of random words from each list 
+    n = 25
+    random_one = random.sample(word_list_one, n)
+    random_two = random.sample(word_list_two, n)
+    random_three = random.sample(word_list_three, n)
+    random_four = random.sample(word_list_four, n)
+    
+    print(random_one)
+    
+    #need to import list of all pseudowords for each langauge.  that's the 'final' that I imput in the next 
+    path_pseudowords = "C:\\Users\\Sara\\Desktop\\PhD\\Code\\Peusodowords\\pseudowords\\"+language+"_pseudowords.txt"
+    pseudowords_df = pd.read_csv(path_pseudowords, sep = ',')
+    #get rid of redundant line numbers
+    pseudowords_df = pseudowords_df.drop(pseudowords_df.columns[0], axis=1)
+    pseudowords_df= pseudowords_df.dropna()
+    pseudowords_list = pseudowords_df['0'].values.tolist()
+    
+    #from a list of words, make a smaller list of words containing only specified cv pattern 
+    #eg: cvc --> dog, hat, dig 
+    def find_word(words, pattern):
+        matches = []
+        for word in words:
+            if len(word) == len(pattern):
+                for i in range(len(word)):
+                  if pattern[i] == 'c':
+                    if word[i] in 'aeiouàáâäåæèéêëíïóôöøùúüāąęğıōœºîûÿìòčžýآأؤإئةىاهوي':
+                      break
+                  elif pattern[i] == 'v':
+                    if not word[i] in 'aeiouàáâäåæèéêëíïóôöøùúüāąęğıōœºîûÿìòčžýآأؤإئةىاهوي':
+                      break
+                  if i == len(word)-1: 
+                    matches.append(word)
+    
+        return matches
+    
+    def get_cvcv(word): 
+        pattern = ''
+        for i in word:
+            if i in 'aeiouàáâäåæèéêëíïóôöøùúüāąęğıōœºîûÿìòčžýآأؤإئةىاهوي':
+                pattern += 'v'
+            else: 
+                pattern += 'c'
+        return pattern
+                
+    get_cvcv('rampant')
+    
+    ############################################################################################
+    frequency_bands = [random_one, random_two, random_three, random_four]
+    
+    count = 0 
+    for lst in frequency_bands: 
+        count += 1 
+        word = []
+        ten_pseudowords = []
+        for i in lst: 
+            pattern = get_cvcv(i)
+            pseudo_lst = find_word(pseudowords_list, pattern)
+            for k in range(10):
+                word.append(i)
+            length = len(pseudo_lst)
+            if len == 0: 
+                for q in range(10):
+                    ten_pseudowords.append('NO MORE MATCHES')
+            elif length < 11: 
+                for j in range(length): 
+                    ten_pseudowords.append(pseudo_lst[j])
+                for h in range(10-length): 
+                    ten_pseudowords.append('NO MORE MATCHES')
+            elif length > 10: 
+                for p in range(10):
+                    ten_pseudowords.append(pseudo_lst[p])
+                
+    
+        data = {'word': word, 'pseudoword': ten_pseudowords}
+        # Create a DataFrame from the dictionary
+        final = pd.DataFrame(data) 
+        final.index = final.index + 1
+        final.to_csv("C:\\Users\\Sara\\Desktop\\PhD\\Code\\Peusodowords\\Sample_data\\"+language+"_"+str(count)+"_pseudowords.txt")
+    
+
